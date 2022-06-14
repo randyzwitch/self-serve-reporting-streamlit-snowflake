@@ -6,7 +6,7 @@ import pandas as pd
 conn = snowflake.connector.connect(**st.secrets["sfdevrel"])
 
 
-def sales_report(dt, conn):
+def sales_report(dt, conn, days_prior=-90):
     """Calculates sales report for 90 days prior to a given date"""
 
     return pd.read_sql(
@@ -25,7 +25,7 @@ def sales_report(dt, conn):
         from
             SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.lineitem
         where
-            l_shipdate <= dateadd(day, -90, to_date('{dt}'))
+            l_shipdate between dateadd(day, {days_prior}, to_date('{dt}')) and '{dt}'
         group by
             l_returnflag,
             l_linestatus
@@ -38,5 +38,6 @@ def sales_report(dt, conn):
 
 
 # run report, write to CSV
-report = sales_report("1998-12-01", conn)
+# valid dates: 1992-01-02 - 1998-12-01
+report = sales_report("1992-12-01", conn)
 report.to_csv("sales_report.csv", index=False)
